@@ -13,13 +13,28 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to send notification email
-const sendNotificationEmail = (email, message, category, extraContent) => {
+const sendNotificationEmail = (email, title, category) => {
     const mailOptions = {
         from: process.env.EMAIL_ADDRESS,
         to: email,
-        subject: `New Post Notification in ${category}`,
-        text: `${message}\n\n${extraContent}`
-    };
+        subject: `Exciting Announcement: New Post Alert in ${category} on HogwartsEdx`,
+        html: `
+        <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto;">
+            <header style="text-align: center; margin-bottom: 20px;">
+                <img src="https://sanjaybasket.s3.ap-south-1.amazonaws.com/HogwartsEdX/email_hogwartsedx_logo.jpeg" alt="HogwartsEdx Logo" style="max-width: 200px;">
+            </header>
+            <section style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
+                <h2 style="text-align: center; color: #007bff;">New Post Notification</h2>
+                <div style="margin-top: 20px;">
+                    <p style="font-size: 16px; color: #333; margin-bottom: 10px;">Check out the new post: <a href="https://hogwartsedx.vercel.app/category" style="color: #007bff; text-decoration: none;">${title}</a></p>
+                </div>
+            </section>
+            <footer style="text-align: center; margin-top: 20px;">
+                <p style="font-size: 14px; color: #777;">Thank you for being a part of HogwartsEdx!</p>
+                <p style="font-size: 14px; color: #777;">For any queries, contact us at <a href="mailto:sanjay.patidar.eduxcel@gmail.com" style="color: #007bff;">sanjay.patidar.eduxcel@gmail.com</a></p>
+            </footer>
+        </div>
+    `    };
 
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
@@ -98,11 +113,9 @@ const createPost = async (req, res) => {
         // Find users who follow the category
         const users = await User.find({ followedCategories: category });
 
-        // Create and send notifications
         for (const user of users) {
             const message = `A new post titled "${title}" has been added to the category "${category}".`;
-            const extraContent = `Check out the new post: ${title}\n\nRead more: <link_to_post>\n\nSome additional information here.`;
-
+           
             const notification = new Notification({
                 user: user._id,
                 message
@@ -111,7 +124,7 @@ const createPost = async (req, res) => {
             await notification.save();
 
             // Send notification email
-            sendNotificationEmail(user.email, message, category, extraContent);
+            sendNotificationEmail(user.email, message, category);
         }
 
         res.status(201).json(newPost);
