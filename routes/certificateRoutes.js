@@ -3,6 +3,7 @@ const router = express.Router();
 const Certificate = require('../models/Certificate');
 const User = require('../models/User');
 const AWS = require('aws-sdk');
+const path = require('path');
 
 // AWS SDK Configuration
 const s3 = new AWS.S3({
@@ -33,11 +34,17 @@ router.get('/:uniqueId/download', async (req, res) => {
         }
 
         const filePath = certificate.filePath;
+        const bucketName = 'sanjaybasket';
+        const key = filePath.split(`${bucketName}/`)[1]; // Correctly extract the S3 key
+
+        if (!key) {
+            return res.status(404).json({ msg: 'File key extraction failed' });
+        }
 
         // Generate a signed URL for downloading the file from S3
         const params = {
-            Bucket: 'sanjaybasket', // Replace with your bucket name
-            Key: filePath.split('sanjaybasket/')[1], // Extract the key from the full file path
+            Bucket: sanjaybasket,
+            Key: key,
             Expires: 60 // URL expiration time in seconds
         };
 
