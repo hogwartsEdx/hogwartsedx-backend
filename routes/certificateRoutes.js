@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const Certificate = require('../models/Certificate');
-const path = require('path');
-const fs = require('fs');
 const User = require('../models/User');
+const AWS = require('aws-sdk');
+
+// AWS SDK Configuration
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
+
 // Route to get certificate by uniqueId
 router.get('/:uniqueId', async (req, res) => {
     try {
@@ -18,6 +24,7 @@ router.get('/:uniqueId', async (req, res) => {
     }
 });
 
+// Route to download certificate by uniqueId
 router.get('/:uniqueId/download', async (req, res) => {
     try {
         const certificate = await Certificate.findOne({ uniqueId: req.params.uniqueId });
@@ -26,17 +33,20 @@ router.get('/:uniqueId/download', async (req, res) => {
         }
 
         const filePath = certificate.filePath;
-        const fileName = path.basename(filePath);
 
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ msg: 'File not found' });
-        }
+        // Generate a signed URL for downloading the file from S3
+        const params = {
+            Bucket: 'sanjaybasket', // Replace with your bucket name
+            Key: filePath.split('sanjaybasket/')[1], // Extract the key from the full file path
+            Expires: 60 // URL expiration time in seconds
+        };
 
-        res.download(filePath, fileName, (err) => {
+        s3.getSignedUrl('getObject', params, (err, url) => {
             if (err) {
-                console.error("Error downloading file:", err.message);
-                res.status(500).send('Server error');
+                console.error('Error generating signed URL:', err);
+                return res.status(500).json({ msg: 'Error generating signed URL' });
             }
+            res.redirect(url); // Redirect to the signed URL
         });
     } catch (err) {
         console.error("Server error:", err.message);
@@ -44,6 +54,7 @@ router.get('/:uniqueId/download', async (req, res) => {
     }
 });
 
+// Route to fetch all certificates based on query parameters
 router.get('/', async (req, res) => {
     try {
         let query = {};
@@ -74,8 +85,5 @@ router.get('/', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
-
-
-
 
 module.exports = router;
