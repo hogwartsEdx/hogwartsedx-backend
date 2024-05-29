@@ -232,40 +232,32 @@ router.put('/complete/:postId', auth, async (req, res) => {
             console.log('All posts completed. Generating certificate...');
             const { filePath, uniqueId } = await generateCertificatePDF(user, post.category);
 
-            try {
-                console.log('Saving certificate...');
-                const certificate = new Certificate({
-                    user: user._id,
-                    category: post.category,
-                    uniqueId,
-                    filePath
-                });
-                await certificate.save();
-                console.log('Certificate saved successfully.');
-            } catch (err) {
-                console.error('Error saving certificate:', err);
-            }
+            // Load Harry Potter font
+            const HarryPFontPath = path.join(__dirname, '..', 'uploads', 'fonts', 'HARRYP__.TTF');
 
             // Send email to the user
             const mailOptions = {
                 from: 'workrework.sanjay@gmail.com',
                 to: user.email,
                 subject: `Congratulations! You've completed all modules in the ${post.category} category!`,
-                html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <header style="text-align: center; margin-bottom: 20px;">
-                        <img src="https://sanjaybasket.s3.ap-south-1.amazonaws.com/communityZ/logoWeb.png" alt="EduXcel Logo" style="max-width: 200px;">
-                    </header>
-                    <section style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
-                        <h2 style="text-align: center; color: #007bff;">Congratulations, ${user.name}!</h2>
-                        <p style="font-size: 16px; color: #333; text-align: center;">You've successfully completed all the modules in the <strong>${post.category}</strong> category. Keep up the great work!</p>
-                        <p style="font-size: 16px; color: #333; text-align: center;">Please find your certificate of completion attached to this email.</p>
-                    </section>
-                    <footer style="text-align: center; margin-top: 20px;">
-                        <p style="font-size: 14px; color: #777;">Thank you for being a part of EduXcel!</p>
-                        <p style="font-size: 14px; color: #777;">For any queries, contact us at <a href="mailto:sanjay.patidar.eduxcel@gmail.com">sanjay.patidar.eduxcel@gmail.com</a></p>
-                    </footer>
-                </div>
+html: `
+    <div style="font-family: 'HarryP', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <header style="text-align: center; margin-bottom: 20px;">
+            <img src="https://sanjaybasket.s3.ap-south-1.amazonaws.com/HogwartsEdX/email_hogwartsedx_logo.jpeg" alt="HogwartsEdx Logo" style="max-width: 200px;">
+        </header>
+        <section style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
+            <h2 style="text-align: center; color: #007bff; font-family: 'HarryP';">Congratulations, ${user.name}!</h2>
+            <p style="font-size: 16px; color: #333; text-align: center; font-family: 'HarryP';">You've successfully completed all the modules in the <strong>${post.category}</strong> category. Keep up the great work!</p>
+            <p style="font-size: 16px; color: #333; text-align: center; font-family: 'HarryP';">Please find your certificate of completion attached to this email.</p>
+            <p style="font-size: 16px; color: #333; text-align: center; font-family: 'HarryP';">As the founder of HogwartsEdx, I am delighted to present you with this certificate, recognizing your dedication and accomplishment in the magical arts of technology.</p>
+            <p style="font-size: 16px; color: #333; text-align: center; font-family: 'HarryP';">May this certificate serve as a testament to your skills and a reminder of your journey with us at HogwartsEdx.</p>
+        </section>
+        <footer style="text-align: center; margin-top: 20px; font-family: 'HarryP';">
+            <p style="font-size: 14px; color: #777;">Thank you for being a part of HogwartsEdx !</p>
+            <p style="font-size: 14px; color: #777;">For any queries, contact us at <a href="mailto:sanjay.patidar.eduxcel@gmail.com" style="color: #007bff;">sanjay.patidar.eduxcel@gmail.com</a></p>
+        </footer>
+    </div>
+
                 `,
                 attachments: [{
                     filename: 'Certificate_of_Completion.pdf',
@@ -292,6 +284,7 @@ router.put('/complete/:postId', auth, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
 
 // Fetch completed posts for a user
 router.get('/completed', auth, async (req, res) => {
