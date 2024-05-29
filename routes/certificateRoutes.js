@@ -14,10 +14,13 @@ const s3 = new AWS.S3({
 // Route to get certificate by uniqueId
 router.get('/:uniqueId', async (req, res) => {
     try {
+        console.log(`Fetching certificate with uniqueId: ${req.params.uniqueId}`);
         const certificate = await Certificate.findOne({ uniqueId: req.params.uniqueId }).populate('user', 'name');
         if (!certificate) {
+            console.log('Certificate not found');
             return res.status(404).json({ msg: 'Certificate not found' });
         }
+        console.log('Certificate found:', certificate);
         res.json(certificate);
     } catch (err) {
         console.error("Server error:", err.message);
@@ -28,33 +31,39 @@ router.get('/:uniqueId', async (req, res) => {
 // Route to download certificate by uniqueId
 router.get('/:uniqueId/download', async (req, res) => {
     try {
+        console.log(`Attempting to download certificate with uniqueId: ${req.params.uniqueId}`);
         const certificate = await Certificate.findOne({ uniqueId: req.params.uniqueId });
         if (!certificate) {
+            console.log('Certificate not found');
             return res.status(404).json({ msg: 'Certificate not found' });
         }
 
         const filePath = certificate.filePath;
-        const bucketName = 'sanjaybasket';
-        const key = filePath.split(`${bucketName}/`)[1]; // Correctly extract the S3 key
+        console.log('File path:', filePath);
+
+        // Extract the S3 key from the URL
+        const url = new URL(filePath);
+        const key = url.pathname.substring(1); // Remove leading slash
+        console.log('Extracted S3 key:', key);
 
         if (!key) {
+            console.log('File key extraction failed');
             return res.status(404).json({ msg: 'File key extraction failed' });
         }
 
         // Generate a signed URL for downloading the file from S3
         const params = {
-            Bucket: sanjaybasket,
+            Bucket: 'sanjaybasket',
             Key: key,
             Expires: 60 // URL expiration time in seconds
         };
 
-        s3.getSignedUrl('getObject', params, (err, url) => {
-            if (err) {
-                console.error('Error generating signed URL:', err);
-                return res.status(500).json({ msg: 'Error generating signed URL' });
-            }
-            res.redirect(url); // Redirect to the signed URL
-        });
+        console.log('Generating signed URL with params:', params);
+        const signedUrl = s3.getSignedUrl('getObject', params);
+        console.log('Signed URL generated:', signedUrl);
+        
+        // Sending the signed URL in the response
+        res.json({ url: signedUrl });
     } catch (err) {
         console.error("Server error:", err.message);
         res.status(500).send('Server error');
@@ -64,17 +73,21 @@ router.get('/:uniqueId/download', async (req, res) => {
 // Route to fetch all certificates based on query parameters
 router.get('/', async (req, res) => {
     try {
+        console.log('Fetching certificates with query parameters:', req.query);
         let query = {};
         const { userName, uniqueId, date } = req.query;
 
         if (userName) {
+            console.log(`Searching for users with name matching: ${userName}`);
             const users = await User.find({ name: { $regex: new RegExp(userName, 'i') } });
             const userIds = users.map(user => user._id);
             query['user'] = { $in: userIds };
+            console.log('User IDs found:', userIds);
         }
 
         if (uniqueId) {
             query['uniqueId'] = uniqueId;
+            console.log(`Filtering by uniqueId: ${uniqueId}`);
         }
 
         if (date) {
@@ -83,9 +96,12 @@ router.get('/', async (req, res) => {
             const endOfDay = new Date(date);
             endOfDay.setHours(23, 59, 59, 999);
             query['date'] = { $gte: startOfDay, $lte: endOfDay };
+            console.log(`Filtering by date: from ${startOfDay} to ${endOfDay}`);
         }
 
+        console.log('Final query:', query);
         const certificates = await Certificate.find(query).populate('user', 'name');
+        console.log('Certificates found:', certificates);
         res.json(certificates);
     } catch (err) {
         console.error("Server error:", err.message);
