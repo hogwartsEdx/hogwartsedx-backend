@@ -8,7 +8,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const AWS = require('aws-sdk');
+const session = require('express-session');
+
 require('dotenv').config();
+const passport = require('passport');
+
+require('./config/passport'); // Import Passport configuration
 
 const certificateRoutes = require('./routes/certificateRoutes'); // Import certificateRoutes
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -91,6 +96,15 @@ app.post('/upload/video', upload.single('video'), async (req, res) => {
         res.status(500).json({ error: 'Error uploading video: ' + error.message });
     }
 });
+// Session management
+app.use(session({
+    secret: 'fRwD8ZcX#k5H*J!yN&2G@pQbS9v6E$tA', // Replace with your secret
+    resave: false,
+    saveUninitialized: true,
+}));
+// Initialize Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use('/api/posts', postRoutes);
@@ -99,9 +113,6 @@ app.use('/api/certificates', certificateRoutes); // Use certificateRoutes for ce
 app.use('/api/notifications', notificationRoutes); // Use notificationRoutes
 app.use('/api/categories', notificationRoutes); // Use notificationRoutes
 
-app.get('/', (req, res) => {
-  res.send('Welcome to My API');
-});
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
