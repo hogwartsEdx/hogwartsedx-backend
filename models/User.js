@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
         default: 'user',
         enum: ['user', 'admin']
     },
+    googleId: {
+        type: String,
+        unique: true
+      },
     resetPasswordToken: String,
     followedCategories: [{ type: String }],
  
