@@ -22,12 +22,15 @@
         check('password', 'Password is required').exists()
     ], authController.login);
 
-    // Google OAuth routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
-  // Successful authentication, redirect home.
-  res.redirect('/dashboard');
-});
+    router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+    router.get('/google/callback', (req, res, next) => {
+        console.log('Received callback from Google');
+        next();
+    }, passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
+        console.log('Google authentication successful, redirecting to dashboard');
+        res.redirect('/dashboard');
+    });
     // Forgot password
     router.post('/forgot-password', [
         check('email', 'Please include a valid email').isEmail()
@@ -112,5 +115,8 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
             console.error(err.message);
             res.status(500).send('Server error');
         }
+    });
+    router.get('/verify-token', authMiddleware, (req, res) => {
+        res.json({ valid: true });
     });
     module.exports = router;    
