@@ -102,9 +102,12 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
 }));
-// Initialize Passport middleware
+console.log('Session middleware configured');
+
 app.use(passport.initialize());
 app.use(passport.session());
+console.log('Passport middleware initialized');
+
 
 // Routes
 app.use('/api/posts', postRoutes);
